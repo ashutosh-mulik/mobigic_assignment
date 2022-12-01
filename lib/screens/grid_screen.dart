@@ -1,6 +1,9 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:mobigic_assignment/repo/models/alphabet_model.dart';
 import 'package:mobigic_assignment/repo/models/grid_model.dart';
+import 'package:mobigic_assignment/screens/dfs.dart';
 
 class GridScreen extends StatefulWidget {
   final GridModel gridModel;
@@ -14,16 +17,43 @@ class _GridScreenState extends State<GridScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   List<AlphabetModel> _alphabets = [];
+  List<List<String>> grid = [];
+  List<String> selected = [];
 
   @override
   void initState() {
+    grid = convertGrid(widget.gridModel.alphabets ?? '');
     for (String element in (widget.gridModel.alphabets?.split("") ?? [])) {
       _alphabets.add(AlphabetModel(char: element, isSelected: false));
     }
-    super.initState();
 
-    /// Linear Search
-    _search();
+    String word = '';
+    _searchController.addListener(
+      () {
+        word = _searchController.text;
+        if (word.isNotEmpty) {
+          DFS().patternSearch(
+            grid,
+            word,
+            widget.gridModel.rows ?? 0,
+            widget.gridModel.columns ?? 0,
+          );
+        }
+        var searched = _alphabets.map((e) {
+          if (word.contains(e.char)) {
+            e.isSelected = true;
+            selected.add(e.char);
+          } else {
+            e.isSelected = false;
+            selected.remove(e.char);
+          }
+          return e;
+        }).toList();
+        setState(() => _alphabets = searched);
+      },
+    );
+
+    super.initState();
   }
 
   @override
@@ -89,19 +119,32 @@ class _GridScreenState extends State<GridScreen> {
     );
   }
 
-  void _search() {
-    _searchController.addListener(
-      () {
-        var searched = _alphabets.map((e) {
-          if (e.char == _searchController.text) {
-            e.isSelected = true;
-          } else {
-            e.isSelected = false;
-          }
-          return e;
-        }).toList();
-        setState(() => _alphabets = searched);
-      },
-    );
+  List<List<String>> convertGrid(String str) {
+    int l = str.length;
+    int k = 0, row, column;
+    row = sqrt(l).floor();
+    column = sqrt(l).ceil();
+    if (row * column < l) {
+      row = column;
+    }
+    List<List<String>> s = List.generate(row, (index) => List.generate(column, (j) => ""));
+    for (int i = 0; i < row; i++) {
+      for (int j = 0; j < column; j++) {
+        s[i][j] = str[k];
+        k++;
+      }
+    }
+
+    /// Print the grid
+    for (int i = 0; i < row; i++) {
+      for (int j = 0; j < column; j++) {
+        if (s[i][j] == '\0') {
+          break;
+        }
+        print(s[i][j]);
+      }
+      print("");
+    }
+    return s;
   }
 }
